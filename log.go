@@ -25,19 +25,20 @@ var logFile *os.File
 var currentDate string
 var logFileName string = "root"
 
+var defaultCfg = &Config{
+	LogDir:   defaultLogDir,
+	LogLevel: LevelInfo,
+}
+
 // 默认初始化函数，确保只执行一次
 func defaultInit() {
 	once.Do(func() {
-		InitSimpleLog(nil) // 使用默认配置初始化
+		InitSimpleLog(defaultCfg) // 使用默认配置初始化
 	})
 }
 
 // InitSimpleLog 日志初始化函数
 func InitSimpleLog(config *Config) {
-	defaultCfg := &Config{
-		LogDir:   defaultLogDir,
-		LogLevel: LevelInfo,
-	}
 
 	if config != nil {
 		defaultCfg.LogDir = getOrDefault(config.LogDir, defaultCfg.LogDir)
