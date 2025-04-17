@@ -21,7 +21,7 @@ type Config struct {
 	LogFile  string
 }
 
-var logFile *os.File
+var LogFile *os.File
 var currentDate string
 var logFileName string = "root"
 
@@ -77,19 +77,19 @@ func (w *dailyLogWriter) Write(p []byte) (n int, err error) {
 		currentDate = newDate
 		w.switchLogFile()
 	}
-	return logFile.Write(p)
+	return LogFile.Write(p)
 }
 
 func (w *dailyLogWriter) switchLogFile() {
-	if logFile != nil {
-		logFile.Close()
+	if LogFile != nil {
+		LogFile.Close()
 	}
 
 	logfileName := fmt.Sprintf("%s_%s.log", logFileName, currentDate)
 	fullPath := filepath.Join(w.logDir, logfileName)
 
 	var err error
-	logFile, err = os.OpenFile(fullPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0666)
+	LogFile, err = os.OpenFile(fullPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		log.Printf("[error] Open log file error: %v", err)
 		return
