@@ -3,10 +3,10 @@ package simplelog
 import (
 	"fmt"
 	"runtime"
+	"strconv"
+	"strings"
 	"time"
 )
-
-const logPattern = "%s %s %s:%d-%s"
 
 const (
 	levelDebug = iota
@@ -55,11 +55,35 @@ func NewLogBuilder(level int, format, errStack string, v ...any) *LogBuild {
 
 func (l *LogBuild) build() string {
 	name, line := callerInfoSplice()
-	msg := fmt.Sprintf(l.format, l.v...)
-	if l.errStack != "" {
-		msg = fmt.Sprintf("%s\n%s", msg, l.errStack)
+
+	var builder strings.Builder
+	builder.Grow(256)
+
+	builder.WriteString(getTimeString())
+	builder.WriteByte(' ')
+	builder.WriteString(levelNameMap[l.level])
+	builder.WriteByte(' ')
+	builder.WriteString(name)
+	builder.WriteByte(':')
+	builder.WriteString(strconv.Itoa(line))
+	builder.WriteByte('-')
+
+	if len(l.v) > 0 {
+		builder.WriteString(formatMessage(l.format, l.v...))
+	} else {
+		builder.WriteString(l.format)
 	}
-	return fmt.Sprintf(logPattern, getTimeString(), levelNameMap[l.level], name, line, msg)
+
+	if l.errStack != "" {
+		builder.WriteByte('\n')
+		builder.WriteString(l.errStack)
+	}
+
+	return builder.String()
+}
+
+func formatMessage(format string, v ...any) string {
+	return fmt.Sprintf(format, v...)
 }
 
 func callerInfoSplice() (string, int) {
@@ -68,5 +92,35 @@ func callerInfoSplice() (string, int) {
 }
 
 func getTimeString() string {
-	return time.Now().Format("2006-01-02 15:04:05.000")
+	now := time.Now()
+	year, month, day := now.Date()
+	hour, min, sec := now.Clock()
+	ms := now.Nanosecond() / 1000000
+
+	var builder strings.Builder
+	builder.Grow(23)
+
+	appendInt(&builder, year, 4)
+	builder.WriteByte('-')
+	appendInt(&builder, int(month), 2)
+	builder.WriteByte('-')
+	appendInt(&builder, day, 2)
+	builder.WriteByte(' ')
+	appendInt(&builder, hour, 2)
+	builder.WriteByte(':')
+	appendInt(&builder, min, 2)
+	builder.WriteByte(':')
+	appendInt(&builder, sec, 2)
+	builder.WriteByte('.')
+	appendInt(&builder, ms, 3)
+
+	return builder.String()
+}
+
+func appendInt(builder *strings.Builder, value, width int) {
+	s := strconv.Itoa(value)
+	for i := len(s); i < width; i++ {
+		builder.WriteByte('0')
+	}
+	builder.WriteString(s)
 }
